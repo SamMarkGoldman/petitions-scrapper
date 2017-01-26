@@ -1,14 +1,36 @@
 require 'pry'
 require 'mechanize'
+require 'json'
 
+file = File.open("results.json", 'r')
+json = JSON.load(file) || { "counts" => [], "descriptions" => {} }
+file.close
+
+
+ROOT_URL = 'https://petitions.whitehouse.gov/'
 agent = Mechanize.new
-page = agent.get('https://petitions.whitehouse.gov/')
+page = agent.get(ROOT_URL)
 
+dump = { time: Time.new }
 page.css('.node-petition').first(5).each do |petition|
-  # binding.pry
+  key = petition.css('h3 a').first['href']
   title = petition.css('h3').text
   number = petition.css('span.signatures-number').text
-  puts "#{number.ljust(10)} | #{title}" if title && number
+  dump[key] = { title: title, number: number }
+end
+json['counts'] << dump
+
+dump.keys.each do |key|
+  next if key == :time
+  next if json["descriptions"][key]
+  single_petition = agent.get(ROOT_URL + key)
+
+  date = single_petition.css('.petition-attribution').text
+  text = single_petition.css('.content p').text
+
+  json['descriptions'][key] = { date: date, text: text }
 end
 
-puts 'bye'
+file = File.open("results.json", 'w')
+file.write(json.to_json)
+file.close
