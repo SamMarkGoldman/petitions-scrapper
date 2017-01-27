@@ -2,7 +2,7 @@ require 'pry'
 require 'mechanize'
 require 'json'
 
-file = File.open("results.json", 'r')
+file = File.open("results/results.json", 'r')
 json = JSON.load(file) || { "counts" => [], "descriptions" => {} }
 file.close
 
@@ -31,6 +31,6 @@ dump.keys.each do |key|
   json['descriptions'][key] = { date: date, text: text }
 end
 
-file = File.open("results.json", 'w')
+file = File.open("results/results.json", 'w')
 file.write(json.to_json)
 file.close
